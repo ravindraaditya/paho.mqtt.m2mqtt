@@ -558,14 +558,7 @@ namespace uPLibrary.Networking.M2Mqtt
             }
             catch (Exception ex)
             {
-                try
-                {
-                    this.Close();
-                }
-                catch
-                {
-                    // ignored
-                }
+                this.SafeClose();
                 throw new MqttConnectionException("Exception connecting to the broker", ex);
             }
 
@@ -609,14 +602,7 @@ namespace uPLibrary.Networking.M2Mqtt
             }
             else
             {
-                try
-                {
-                    this.Close();
-                }
-                catch
-                {
-                    // ignored
-                }
+                this.SafeClose();
             }
 
             return connack.ReturnCode;
@@ -653,10 +639,26 @@ namespace uPLibrary.Networking.M2Mqtt
         }
 #endif
 
+        public void SafeClose()
+        {
+            try
+            {
+                this.Close();
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
         /// <summary>
         /// Close client
         /// </summary>
+#if BROKER
         public void Close()
+#else
+        private void Close()
+#endif
         {
             // stop receiving thread
             this.isRunning = false;
@@ -1028,14 +1030,7 @@ namespace uPLibrary.Networking.M2Mqtt
 #if TRACE
                 MqttUtility.Trace.WriteLine(TraceLevel.Error, "Exception occurred: {0}", e.ToString());
 #endif
-                try
-                {
-                    this.Close();
-                }
-                catch
-                {
-                    // ignored
-                }
+                this.SafeClose();
 
                 throw new MqttCommunicationException(e);
             }
@@ -1123,15 +1118,7 @@ namespace uPLibrary.Networking.M2Mqtt
             }
             catch
             {
-                try
-                {
-                    this.Close();
-                }
-                catch
-                {
-                    // ignored
-                }
-
+                this.SafeClose();
                 throw;
             }
         }
@@ -1875,14 +1862,7 @@ namespace uPLibrary.Networking.M2Mqtt
                     if ((this.eventQueue.Count == 0) && this.isConnectionClosing)
                     {
                         // client must close connection
-                        try
-                        {
-                            this.Close();
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
+                        this.SafeClose();
 
                         // client raw disconnection
                         this.OnConnectionClosed();

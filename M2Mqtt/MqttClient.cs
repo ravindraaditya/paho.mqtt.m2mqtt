@@ -1028,6 +1028,14 @@ namespace uPLibrary.Networking.M2Mqtt
 #if TRACE
                 MqttUtility.Trace.WriteLine(TraceLevel.Error, "Exception occurred: {0}", e.ToString());
 #endif
+                try
+                {
+                    this.Close();
+                }
+                catch
+                {
+                    // ignored
+                }
 
                 throw new MqttCommunicationException(e);
             }
@@ -1063,52 +1071,68 @@ namespace uPLibrary.Networking.M2Mqtt
         /// <returns>MQTT message response</returns>
         private MqttMsgBase SendReceive(byte[] msgBytes, int timeout)
         {
-            // reset handle before sending
-            this.syncEndReceiving.Reset();
             try
             {
-                // send message
-                this.channel.Send(msgBytes);
-
-                // update last message sent ticks
-                this.lastCommTime = Environment.TickCount;
-            }
-            catch (Exception e)
-            {
-#if !(MF_FRAMEWORK_VERSION_V4_2 || MF_FRAMEWORK_VERSION_V4_3 || COMPACT_FRAMEWORK || WINDOWS_APP || WINDOWS_PHONE_APP)
-                if (typeof(SocketException) == e.GetType())
+                // reset handle before sending
+                this.syncEndReceiving.Reset();
+                try
                 {
-                    // connection reset by broker
-                    if (((SocketException)e).SocketErrorCode == SocketError.ConnectionReset)
-                        this.IsConnected = false;
+                    // send message
+                    this.channel.Send(msgBytes);
+
+                    // update last message sent ticks
+                    this.lastCommTime = Environment.TickCount;
                 }
+                catch (Exception e)
+                {
+#if !(MF_FRAMEWORK_VERSION_V4_2 || MF_FRAMEWORK_VERSION_V4_3 || COMPACT_FRAMEWORK || WINDOWS_APP || WINDOWS_PHONE_APP)
+                    if (typeof(SocketException) == e.GetType())
+                    {
+                        // connection reset by broker
+                        if (((SocketException)e).SocketErrorCode == SocketError.ConnectionReset)
+                            this.IsConnected = false;
+                    }
 #endif
 #if TRACE
-                MqttUtility.Trace.WriteLine(TraceLevel.Error, "Exception occurred: {0}", e.ToString());
+                    MqttUtility.Trace.WriteLine(TraceLevel.Error, "Exception occurred: {0}", e.ToString());
 #endif
 
-                throw new MqttCommunicationException(e);
-            }
+                    throw new MqttCommunicationException(e);
+                }
 
 #if (MF_FRAMEWORK_VERSION_V4_2 || MF_FRAMEWORK_VERSION_V4_3 || COMPACT_FRAMEWORK)
             // wait for answer from broker
             if (this.syncEndReceiving.WaitOne(timeout, false))
 #else
-            // wait for answer from broker
-            if (this.syncEndReceiving.WaitOne(timeout))
+                // wait for answer from broker
+                if (this.syncEndReceiving.WaitOne(timeout))
 #endif
-            {
-                // message received without exception
-                if (this.exReceiving == null)
-                    return this.msgReceived;
-                // receiving thread catched exception
+                {
+                    // message received without exception
+                    if (this.exReceiving == null)
+                        return this.msgReceived;
+                    // receiving thread catched exception
+                    else
+                        throw this.exReceiving;
+                }
                 else
-                    throw this.exReceiving;
+                {
+                    // throw timeout exception
+                    throw new MqttCommunicationException();
+                }
             }
-            else
+            catch
             {
-                // throw timeout exception
-                throw new MqttCommunicationException();
+                try
+                {
+                    this.Close();
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                throw;
             }
         }
 

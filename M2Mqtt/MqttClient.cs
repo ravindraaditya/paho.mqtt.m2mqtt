@@ -1116,9 +1116,9 @@ namespace uPLibrary.Networking.M2Mqtt
                     throw new MqttCommunicationException();
                 }
             }
-            catch
+            catch (MqttCommunicationException)
             {
-                this.SafeClose();
+                this.isRunning = false;
                 throw;
             }
         }

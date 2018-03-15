@@ -25,14 +25,14 @@ namespace uPLibrary.Networking.M2Mqtt
         public const int MQTT_BROKER_DEFAULT_PORT = 1883;
         public const int MQTT_BROKER_DEFAULT_SSL_PORT = 8883;
         // default timeout on receiving from client
-        public const int MQTT_DEFAULT_TIMEOUT = 30000;
+        public const int MQTT_DEFAULT_TIMEOUT = 1800000;
         // max publish, subscribe and unsubscribe retry for QoS Level 1 or 2
-        public const int MQTT_ATTEMPTS_RETRY = 3;
+        public const int MQTT_ATTEMPTS_RETRY = 10;
         // delay for retry publish, subscribe and unsubscribe for QoS Level 1 or 2
         public const int MQTT_DELAY_RETRY = 10000;
         // broker need to receive the first message (CONNECT)
         // within a reasonable amount of time after TCP/IP connection 
-        public const int MQTT_CONNECT_TIMEOUT = 30000;
+        public const int MQTT_CONNECT_TIMEOUT = 1800000;
         // default inflight queue size
         public const int MQTT_MAX_INFLIGHT_QUEUE_SIZE = int.MaxValue;
 
